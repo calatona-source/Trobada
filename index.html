@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trobada 13 de setembre</title>
+  <!-- Tailwind des de CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="description" content="Aplicació senzilla per organitzar un àpat de grup: tipus de menú, quantitats, restaurant i enviament per correu." />
+  <style>
+    ::selection { background: #fde68a; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-amber-50 to-orange-100 text-slate-800">
+  <div class="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+    <header class="flex items-center justify-between mb-6">
+      <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight">
+        🍽️ Trobada 13 de setembre
+      </h1>
+      <span class="text-xs sm:text-sm text-slate-500">Fitxer únic · Tailwind CDN</span>
+    </header>
+
+    <div class="bg-white/80 backdrop-blur shadow-xl rounded-2xl p-4 sm:p-6 ring-1 ring-black/5">
+      <p class="text-sm sm:text-base text-slate-600 mb-4">
+        Omple el teu nom, les quantitats de menús, indica si hi ha intoleràncies i tria el restaurant. Al final, prem <strong>Enviar per correu</strong> per generar un missatge amb el resum preparat per enviar a
+        <span class="font-semibold">calatona@gmail.com</span>.
+      </p>
+
+      <form id="mealForm" class="space-y-6">
+        <!-- Nom -->
+        <section aria-labelledby="nom-title">
+          <h2 id="nom-title" class="text-xl font-bold mb-2">1) El teu nom</h2>
+          <input type="text" id="userName" placeholder="Escriu el teu nom" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-300" />
+        </section>
+
+        <!-- Tipus de menú -->
+        <section aria-labelledby="menus-title">
+          <h2 id="menus-title" class="text-xl font-bold mb-2">2) Tipus de menús</h2>
+          <div id="menusContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+        </section>
+
+        <!-- Intoleràncies -->
+        <section aria-labelledby="intolerancies-title">
+          <h2 id="intolerancies-title" class="text-xl font-bold mb-2">3) Intoleràncies o al·lèrgies</h2>
+          <textarea id="intolerancies" rows="3" placeholder="Escriu aquí si hi ha alguna intolerància o al·lèrgia" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-300"></textarea>
+        </section>
+
+        <!-- Restaurant -->
+        <section aria-labelledby="rest-title" class="pt-2">
+          <h2 id="rest-title" class="text-xl font-bold mb-2">4) Triar restaurant</h2>
+          <fieldset class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="restaurantFieldset">
+            <label class="flex items-center gap-2 p-3 rounded-xl border border-slate-200 hover:border-amber-300 cursor-pointer bg-white">
+              <input type="radio" name="restaurant" value="Els Castanyers" class="accent-amber-600" />
+              <span>Els Castanyers</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 rounded-xl border border-slate-200 hover:border-amber-300 cursor-pointer bg-white">
+              <input type="radio" name="restaurant" value="Sant romà" class="accent-amber-600" />
+              <span>Sant romà</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 rounded-xl border border-slate-200 hover:border-amber-300 cursor-pointer bg-white">
+              <input type="radio" name="restaurant" value="Ambos" class="accent-amber-600" />
+              <span>Ambos</span>
+            </label>
+          </fieldset>
+        </section>
+
+        <!-- Resum -->
+        <section aria-labelledby="summary-title" class="pt-2">
+          <h2 id="summary-title" class="text-xl font-bold mb-2">Resum</h2>
+          <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+            <div id="summaryContent" class="text-sm sm:text-base space-y-1"></div>
+            <div class="mt-3 text-xs text-slate-500" id="lastSaved"></div>
+          </div>
+        </section>
+
+        <!-- Accions -->
+        <section class="flex flex-col sm:flex-row gap-3 pt-2">
+          <button type="button" id="copyBtn" class="flex-1 px-4 py-3 rounded-2xl bg-slate-800 text-white shadow hover:shadow-md active:scale-[.99]">
+            Copiar resum
+          </button>
+          <a id="mailtoLink" class="flex-1 text-center px-4 py-3 rounded-2xl bg-amber-500 text-white shadow hover:shadow-md active:scale-[.99]" href="#">
+            Enviar per correu
+          </a>
+        </section>
+      </form>
+    </div>
+
+    <footer class="mt-6 text-xs text-slate-500 leading-relaxed">
+      <details class="bg-white/70 p-4 rounded-2xl border border-slate-200">
+        <summary class="cursor-pointer font-semibold">Com utilitzar aquest fitxer</summary>
+        <ol class="list-decimal ml-5 mt-2 space-y-1">
+          <li>Desa aquest contingut com <kbd>trobada.html</kbd> a l'ordinador.</li>
+          <li>Obre'l amb doble clic (s'obrirà al navegador).</li>
+          <li>Omple les dades i prem <em>Enviar per correu</em> per crear el missatge a <strong>calatona@gmail.com</strong>.</li>
+        </ol>
+      </details>
+    </footer>
+  </div>
+
+  <script>
+    const $ = (sel, ctx = document) => ctx.querySelector(sel);
+    const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
+    function nowStamp() { const d = new Date(); return d.toLocaleString('ca-ES'); }
+
+    let menus = [];
+    const DEFAULT_MENUS = [
+      { id: crypto.randomUUID(), name: 'Adult', qty: 0 },
+      { id: crypto.randomUUID(), name: 'Infantil', qty: 0 },
+    ];
+
+    function loadState() {
+      const saved = localStorage.getItem('mealState');
+      if (saved) { try { return JSON.parse(saved); } catch {} }
+      return { menus: DEFAULT_MENUS, restaurant: '', name: '', intolerancies: '' };
+    }
+    function saveState() {
+      localStorage.setItem('mealState', JSON.stringify({ menus, restaurant: currentRestaurant(), name: $('#userName').value, intolerancies: $('#intolerancies').value }));
+      $('#lastSaved').textContent = `Desat local: ${nowStamp()}`;
+    }
+    function currentRestaurant() {
+      const r = $('input[name="restaurant"]:checked');
+      return r ? r.value : '';
+    }
+
+    function renderMenus() {
+      const container = $('#menusContainer');
+      container.innerHTML = '';
+      menus.forEach((m) => {
+        const card = document.createElement('div');
+        card.className = 'rounded-xl border border-slate-200 bg-white p-3 flex flex-col gap-2 shadow-sm';
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-semibold">${m.name}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" class="decBtn px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50">−</button>
+            <input type="number" min="0" value="${m.qty}" class="qtyInput w-24 text-center px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-300" />
+            <button type="button" class="incBtn px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50">+</button>
+          </div>`;
+
+        card.querySelector('.incBtn').addEventListener('click', () => { m.qty++; card.querySelector('.qtyInput').value = m.qty; updateSummary(); saveState(); });
+        card.querySelector('.decBtn').addEventListener('click', () => { m.qty = Math.max(0, m.qty - 1); card.querySelector('.qtyInput').value = m.qty; updateSummary(); saveState(); });
+        card.querySelector('.qtyInput').addEventListener('input', (e) => { const val = Math.max(0, parseInt(e.target.value || '0', 10)); m.qty = Number.isFinite(val) ? val : 0; updateSummary(); saveState(); });
+        container.appendChild(card);
+      });
+    }
+
+    function updateSummary() {
+      const total = menus.reduce((acc, m) => acc + (Number(m.qty) || 0), 0);
+      const summaryEl = $('#summaryContent');
+      summaryEl.innerHTML = '';
+      const name = $('#userName').value.trim();
+      const intolerancies = $('#intolerancies').value.trim();
+      const r = currentRestaurant();
+      const list = document.createElement('ul');
+      list.className = 'list-disc ml-5 space-y-1';
+      menus.forEach(m => { const li = document.createElement('li'); li.textContent = `${m.name}: ${m.qty}`; list.appendChild(li); });
+      const totalP = document.createElement('p'); totalP.className = 'font-semibold pt-2'; totalP.textContent = `Total comensals: ${total}`;
+      const restP = document.createElement('p'); restP.className = 'pt-1'; restP.textContent = `Restaurant: ${r || '—'}`;
+      const nameP = document.createElement('p'); nameP.className = 'pt-1'; nameP.textContent = `Nom: ${name || '—'}`;
+      const intP = document.createElement('p'); intP.className = 'pt-1'; intP.textContent = `Intoleràncies: ${intolerancies || '—'}`;
+      summaryEl.append(list, totalP, restP, nameP, intP);
+
+      const subject = encodeURIComponent(`Reserva trobada — ${r || 'Restaurant per confirmar'}`);
+      const bodyLines = [
+        `Resum creat: ${nowStamp()}`,
+        '',
+        `Nom: ${name || '-'}`,
+        'Tipus de menús i quantitats:',
+        ...menus.map(m => `- ${m.name}: ${m.qty}`),
+        `Total comensals: ${total}`,
+        `Restaurant: ${r || 'Per confirmar'}`,
+        `Intoleràncies: ${intolerancies || '-'}`
+      ];
+      const body = encodeURIComponent(bodyLines.join('\n'));
+      $('#mailtoLink').setAttribute('href', `mailto:calatona@gmail.com?subject=${subject}&body=${body}`);
+    }
+
+    (function init() {
+      const state = loadState();
+      menus = state.menus && state.menus.length ? state.menus : DEFAULT_MENUS;
+      renderMenus();
+      updateSummary();
+      if (state.restaurant) { const opt = $$('input[name="restaurant"]').find(i => i.value === state.restaurant); if (opt) opt.checked = true; }
+      $('#userName').value = state.name || '';
+      $('#intolerancies').value = state.intolerancies || '';
+      $('#userName').addEventListener('input', () => { updateSummary(); saveState(); });
+      $('#intolerancies').addEventListener('input', () => { updateSummary(); saveState(); });
+      $$('#restaurantFieldset input[type="radio"]').forEach(r => r.addEventListener('change', () => { updateSummary(); saveState(); }));
+      $('#copyBtn').addEventListener('click', async () => { const txt = $('#summaryContent').innerText.trim(); try { await navigator.clipboard.writeText(txt); alert('Resum copiat.'); } catch { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); alert('Resum copiat.'); } });
+      $('#lastSaved').textContent = 'Dades desades localment mentre uses l\'app.';
+    })();
+  </script>
+</body>
+</html>
